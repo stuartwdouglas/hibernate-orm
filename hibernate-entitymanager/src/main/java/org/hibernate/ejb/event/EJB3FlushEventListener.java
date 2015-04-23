@@ -44,7 +44,7 @@ public class EJB3FlushEventListener extends DefaultFlushEventListener implements
 	}
 
 	protected Object getAnything() {
-		return new IdentityHashMap( 10 );
+		return new IdentityHashMap( 0 );
 	}
 
 }

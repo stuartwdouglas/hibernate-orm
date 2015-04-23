@@ -53,6 +53,7 @@ import org.hibernate.engine.spi.ManagedEntity;
  */
 public class EntityEntryContext {
 	private static final Logger log = Logger.getLogger( EntityEntryContext.class );
+	public static final int EXPECTED_MAX_SIZE = 4;
 
 	private transient ManagedEntity head;
 	private transient ManagedEntity tail;
@@ -86,7 +87,7 @@ public class EntityEntryContext {
 		else {
 			ManagedEntity wrapper = null;
 			if ( nonEnhancedEntityXref == null ) {
-				nonEnhancedEntityXref = new IdentityHashMap<Object, ManagedEntity>();
+				nonEnhancedEntityXref = new IdentityHashMap<Object, ManagedEntity>(EXPECTED_MAX_SIZE);
 			}
 			else {
 				wrapper = nonEnhancedEntityXref.get( entity );
