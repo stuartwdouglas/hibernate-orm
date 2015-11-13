@@ -122,6 +122,7 @@ import org.hibernate.event.spi.ResolveNaturalIdEventListener;
 import org.hibernate.event.spi.SaveOrUpdateEvent;
 import org.hibernate.event.spi.SaveOrUpdateEventListener;
 import org.hibernate.internal.CriteriaImpl.CriterionEntry;
+import org.hibernate.internal.util.compare.EqualsHelper;
 import org.hibernate.jdbc.ReturningWork;
 import org.hibernate.jdbc.Work;
 import org.hibernate.jdbc.WorkExecutor;
@@ -205,6 +206,7 @@ public final class SessionImpl extends AbstractSessionImpl implements EventSourc
 	private transient ExceptionMapper exceptionMapper;
 	private transient ManagedFlushChecker managedFlushChecker;
 	private transient AfterCompletionAction afterCompletionAction;
+	private transient EntityKey lastGeneratedKey;
 
 	/**
 	 * Constructor used for openSession(...) processing, as well as construction
@@ -345,6 +347,17 @@ public final class SessionImpl extends AbstractSessionImpl implements EventSourc
 
 	}
 
+	@Override
+	public EntityKey generateEntityKey(Serializable id, EntityPersister persister) {
+		if ( lastGeneratedKey != null ) {
+			if (EqualsHelper.areEqual(persister, lastGeneratedKey.getPersister()) && EqualsHelper.areEqual(id, lastGeneratedKey.getIdentifier()) ) {
+				return lastGeneratedKey;
+			}
+		}
+		EntityKey entityKey = new EntityKey( id, persister );
+		lastGeneratedKey = entityKey;
+		return entityKey;
+	}
 	private void initializeFromSessionOwner(SessionOwner sessionOwner) {
 		if ( sessionOwner != null ) {
 			if ( sessionOwner.getExceptionMapper() != null ) {
