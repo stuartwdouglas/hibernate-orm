@@ -72,6 +72,10 @@ public final class EntityKey implements Serializable {
 		return persister.getEntityName();
 	}
 
+	public EntityPersister getPersister() {
+		return persister;
+	}
+
 	@Override
 	public boolean equals(Object other) {
 		if ( this == other ) {
