@@ -151,7 +151,8 @@ public abstract class AbstractEntityManagerImpl implements HibernateEntityManage
 
 		this.lockOptions = new LockOptions();
 		this.properties = new HashMap<String, Object>();
-		for ( String key : ENTITY_MANAGER_SPECIFIC_PROPERTIES ) {
+		for ( int i = 0; i < ENTITY_MANAGER_SPECIFIC_PROPERTIES.size(); ++i ) {
+			String key = ENTITY_MANAGER_SPECIFIC_PROPERTIES.get(i);
 			if ( entityManagerFactory.getProperties().containsKey( key ) ) {
 				this.properties.put( key, entityManagerFactory.getProperties().get( key ) );
 			}
