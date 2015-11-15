@@ -45,7 +45,7 @@ allprojects {
 
 ext {
     expectedGradleVersion = '2.4'
-    hibernateTargetVersion = '5.0.1.Final'
+    hibernateTargetVersion = '5.0.1.Final-SNAPSHOT'
 
     osgiExportVersion = hibernateTargetVersion.replaceAll( '-SNAPSHOT', '.SNAPSHOT' )
 }
@@ -78,6 +78,7 @@ def osgiDescription() {
 subprojects { subProject ->
     apply plugin: 'idea'
     apply plugin: 'eclipse'
+    apply plugin: 'maven'
 
     defaultTasks 'build'
 
