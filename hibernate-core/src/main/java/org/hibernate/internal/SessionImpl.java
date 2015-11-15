@@ -207,6 +207,7 @@ public final class SessionImpl extends AbstractSessionImpl implements EventSourc
 	private transient ManagedFlushChecker managedFlushChecker;
 	private transient AfterCompletionAction afterCompletionAction;
 	private transient EntityKey lastGeneratedKey;
+	private transient LoadEvent loadEvent; //cached LoadEvent instance
 
 	/**
 	 * Constructor used for openSession(...) processing, as well as construction
@@ -999,12 +1000,31 @@ public final class SessionImpl extends AbstractSessionImpl implements EventSourc
 				: eager
 				? LoadEventListener.INTERNAL_LOAD_EAGER
 				: LoadEventListener.INTERNAL_LOAD_LAZY;
-		LoadEvent event = new LoadEvent( id, entityName, true, this );
-		fireLoad( event, type );
-		if ( !nullable ) {
-			UnresolvableObjectException.throwIfNull( event.getResult(), id, entityName );
+
+		LoadEvent event = loadEvent;
+		if(event == null) {
+			event = new LoadEvent( id, entityName, true, this );
+		} else {
+			event.setEntityClassName(entityName);
+			event.setEntityId(id);
+			event.setInstanceToLoad(null);
+			event.setLockMode(LoadEvent.DEFAULT_LOCK_MODE);
+			event.setLockScope(LoadEvent.DEFAULT_LOCK_OPTIONS.getScope());
+			event.setLockTimeout(LoadEvent.DEFAULT_LOCK_OPTIONS.getTimeOut());
 		}
-		return event.getResult();
+		fireLoad( event, type );
+		Object result = event.getResult();
+		if ( !nullable ) {
+			UnresolvableObjectException.throwIfNull(result, id, entityName );
+		}
+		if(loadEvent == null) {
+			event.setEntityClassName(null);
+			event.setEntityId(null);
+			event.setInstanceToLoad(null);
+			event.setResult(null);
+			loadEvent = event;
+		}
+		return result;
 	}
 
 	@Override

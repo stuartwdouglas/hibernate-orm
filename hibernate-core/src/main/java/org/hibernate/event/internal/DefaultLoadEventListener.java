@@ -734,7 +734,7 @@ public class DefaultLoadEventListener extends AbstractLockUpgradeEventListener i
 		persistenceContext.initializeNonLazyCollections();
 
 		//PostLoad is needed for EJB3
-		PostLoadEvent postLoadEvent = new PostLoadEvent( session )
+		PostLoadEvent postLoadEvent = event.getPostLoadEvent()
 				.setEntity( entity )
 				.setId( entityId )
 				.setPersister( persister );
@@ -831,7 +831,7 @@ public class DefaultLoadEventListener extends AbstractLockUpgradeEventListener i
 
 		//PostLoad is needed for EJB3
 		//TODO: reuse the PostLoadEvent...
-		PostLoadEvent postLoadEvent = new PostLoadEvent( session )
+		PostLoadEvent postLoadEvent = event.getPostLoadEvent()
 				.setEntity( result )
 				.setId( id )
 				.setPersister( persister );
