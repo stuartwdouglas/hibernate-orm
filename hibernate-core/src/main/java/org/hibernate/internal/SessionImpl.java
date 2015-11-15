@@ -1100,7 +1100,7 @@ public final class SessionImpl extends AbstractSessionImpl implements EventSourc
 	private void fireLoad(LoadEvent event, LoadType loadType) {
 		errorIfClosed();
 		checkTransactionSynchStatus();
-		for ( LoadEventListener listener : listeners( EventType.LOAD ) ) {
+		for ( LoadEventListener listener : factory.getLoadEventListeners() ) {
 			listener.onLoad( event, loadType );
 		}
 		delayedAfterCompletion();

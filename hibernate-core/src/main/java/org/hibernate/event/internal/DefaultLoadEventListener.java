@@ -28,9 +28,7 @@ import org.hibernate.engine.spi.PersistenceContext;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.engine.spi.Status;
-import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventSource;
-import org.hibernate.event.spi.EventType;
 import org.hibernate.event.spi.LoadEvent;
 import org.hibernate.event.spi.LoadEventListener;
 import org.hibernate.event.spi.PostLoadEvent;
@@ -739,9 +737,7 @@ public class DefaultLoadEventListener extends AbstractLockUpgradeEventListener i
 				.setId( entityId )
 				.setPersister( persister );
 
-		for ( PostLoadEventListener listener : postLoadEventListeners( session ) ) {
-			listener.onPostLoad( postLoadEvent );
-		}
+		event.getSession().firePostLoad(postLoadEvent);
 
 		return entity;
 	}
@@ -836,19 +832,8 @@ public class DefaultLoadEventListener extends AbstractLockUpgradeEventListener i
 				.setId( id )
 				.setPersister( persister );
 
-		for ( PostLoadEventListener listener : postLoadEventListeners( session ) ) {
-			listener.onPostLoad( postLoadEvent );
-		}
+		event.getSession().firePostLoad(postLoadEvent);
 
 		return result;
-	}
-
-	private Iterable<PostLoadEventListener> postLoadEventListeners(EventSource session) {
-		return session
-				.getFactory()
-				.getServiceRegistry()
-				.getService( EventListenerRegistry.class )
-				.getEventListenerGroup( EventType.POST_LOAD )
-				.listeners();
 	}
 }

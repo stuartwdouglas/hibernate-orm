@@ -25,6 +25,7 @@ import org.hibernate.engine.jdbc.LobCreationContext;
 import org.hibernate.engine.jdbc.connections.spi.JdbcConnectionAccess;
 import org.hibernate.engine.jdbc.spi.JdbcCoordinator;
 import org.hibernate.engine.query.spi.sql.NativeSQLQuerySpecification;
+import org.hibernate.event.spi.PostLoadEvent;
 import org.hibernate.loader.custom.CustomQuery;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.resource.transaction.TransactionCoordinator;
@@ -339,4 +340,6 @@ public interface SessionImplementor extends Serializable, LobCreationContext {
 	SQLQuery createSQLQuery(NamedSQLQueryDefinition namedQueryDefinition);
 
 	SessionEventListenerManager getEventListenerManager();
+
+	void firePostLoad(PostLoadEvent event);
 }

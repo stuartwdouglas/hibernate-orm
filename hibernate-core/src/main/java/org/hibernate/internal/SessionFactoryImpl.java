@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.hibernate.cache.spi.access.RegionAccessStrategy;
+import org.hibernate.event.spi.LoadEventListener;
+import org.hibernate.event.spi.PostLoadEventListener;
 import org.jboss.logging.Logger;
 
 import org.hibernate.AssertionFailure;
@@ -205,6 +207,9 @@ public final class SessionFactoryImpl implements SessionFactoryImplementor {
 	private final transient TypeHelper typeHelper;
 	private final transient SessionFactoryOptions sessionFactoryOptions;
 	private final transient Map<String, RegionAccessStrategy> cacheAccessStrategiesMap = new HashMap();
+
+	private LoadEventListener[] loadEventListeners;
+	private PostLoadEventListener[] postLoadEventListeners;
 
 	public SessionFactoryImpl(final MetadataImplementor metadata, SessionFactoryOptions options) {
 		LOG.debug( "Building session factory" );
@@ -547,6 +552,16 @@ public final class SessionFactoryImpl implements SessionFactoryImplementor {
 				this,
 				serviceRegistry.getService( JndiService.class )
 		);
+		List<LoadEventListener> loadEventListenerList = new ArrayList<LoadEventListener>();
+		for(LoadEventListener i : serviceRegistry.getService( EventListenerRegistry.class ).getEventListenerGroup( EventType.LOAD ).listeners()) {
+			loadEventListenerList.add(i);
+		}
+		loadEventListeners = loadEventListenerList.toArray(new LoadEventListener[loadEventListenerList.size()]);
+		List<PostLoadEventListener> postLoadEventListenerList = new ArrayList<PostLoadEventListener>();
+		for(PostLoadEventListener i : serviceRegistry.getService( EventListenerRegistry.class ).getEventListenerGroup( EventType.POST_LOAD ).listeners()) {
+			postLoadEventListenerList.add(i);
+		}
+		postLoadEventListeners = postLoadEventListenerList.toArray(new PostLoadEventListener[postLoadEventListenerList.size()]);
 	}
 
 	private void applyCfgXmlValues(LoadedConfig aggregatedConfig, SessionFactoryServiceRegistry serviceRegistry) {
@@ -1255,6 +1270,14 @@ public final class SessionFactoryImpl implements SessionFactoryImplementor {
 
 	public TypeHelper getTypeHelper() {
 		return typeHelper;
+	}
+
+ 	LoadEventListener[] getLoadEventListeners() {
+		return loadEventListeners;
+	}
+
+	PostLoadEventListener[] getPostLoadEventListeners() {
+		return postLoadEventListeners;
 	}
 
 	static class SessionBuilderImpl implements SessionBuilderImplementor {

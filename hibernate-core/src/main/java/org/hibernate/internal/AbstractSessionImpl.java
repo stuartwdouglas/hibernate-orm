@@ -42,6 +42,8 @@ import org.hibernate.engine.spi.QueryParameters;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.engine.transaction.internal.TransactionImpl;
+import org.hibernate.event.spi.PostLoadEvent;
+import org.hibernate.event.spi.PostLoadEventListener;
 import org.hibernate.id.uuid.StandardRandomStrategy;
 import org.hibernate.jdbc.WorkExecutor;
 import org.hibernate.jdbc.WorkExecutorVisitable;
@@ -589,4 +591,10 @@ public abstract class AbstractSessionImpl
 		return factory.getServiceRegistry().getService( TransactionCoordinatorBuilder.class );
 	}
 
+	@Override
+	public void firePostLoad(PostLoadEvent event) {
+		for(PostLoadEventListener i : factory.getPostLoadEventListeners()) {
+			i.onPostLoad(event);
+		}
+	}
 }

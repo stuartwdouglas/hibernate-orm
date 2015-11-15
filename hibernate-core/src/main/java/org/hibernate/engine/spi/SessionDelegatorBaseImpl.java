@@ -39,6 +39,7 @@ import org.hibernate.collection.spi.PersistentCollection;
 import org.hibernate.engine.jdbc.connections.spi.JdbcConnectionAccess;
 import org.hibernate.engine.jdbc.spi.JdbcCoordinator;
 import org.hibernate.engine.query.spi.sql.NativeSQLQuerySpecification;
+import org.hibernate.event.spi.PostLoadEvent;
 import org.hibernate.jdbc.ReturningWork;
 import org.hibernate.jdbc.Work;
 import org.hibernate.loader.custom.CustomQuery;
@@ -348,6 +349,11 @@ public class SessionDelegatorBaseImpl implements SessionImplementor, Session {
 	@Override
 	public SessionEventListenerManager getEventListenerManager() {
 		return sessionImplementor.getEventListenerManager();
+	}
+
+	@Override
+	public void firePostLoad(PostLoadEvent event) {
+		sessionImplementor.firePostLoad(event);
 	}
 
 	// Delegates to Session
