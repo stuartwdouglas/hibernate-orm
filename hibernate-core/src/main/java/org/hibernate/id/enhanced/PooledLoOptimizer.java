@@ -7,6 +7,8 @@
 package org.hibernate.id.enhanced;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +30,8 @@ public class PooledLoOptimizer extends AbstractOptimizer {
 			CoreMessageLogger.class,
 			PooledLoOptimizer.class.getName()
 	);
+
+	private static long THREAD_LOCAL_BLOCK_SIZE = Integer.getInteger("org.hibernate.thread-local-block-size", 5000);
 
 	private static class GenerationState {
 		// last value read from db source
@@ -53,24 +57,66 @@ public class PooledLoOptimizer extends AbstractOptimizer {
 	}
 
 	@Override
-	public synchronized Serializable generate(AccessCallback callback) {
-		final GenerationState generationState = locateGenerationState( callback.getTenantIdentifier() );
-
-		if ( generationState.lastSourceValue == null
-				|| ! generationState.value.lt( generationState.upperLimitValue ) ) {
-			generationState.lastSourceValue = callback.getNextValue();
-			generationState.upperLimitValue = generationState.lastSourceValue.copy().add( incrementSize );
-			generationState.value = generationState.lastSourceValue.copy();
-			// handle cases where initial-value is less that one (hsqldb for instance).
-			while ( generationState.value.lt( 1 ) ) {
-				generationState.value.increment();
+	public Serializable generate(AccessCallback callback) {
+		GenerationState local = null;
+		if ( callback.getTenantIdentifier() == null ) {
+		 	local = localAssignedIds.get();
+			if ( local != null && local.value.lt( local.upperLimitValue ) ) {
+				return local.value.makeValueThenIncrement();
 			}
 		}
-		return generationState.value.makeValueThenIncrement();
+
+		synchronized (this) {
+			final GenerationState generationState = locateGenerationState(callback.getTenantIdentifier());
+
+			if (generationState.lastSourceValue == null
+					|| !generationState.value.lt(generationState.upperLimitValue)) {
+				generationState.lastSourceValue = callback.getNextValue();
+				generationState.upperLimitValue = generationState.lastSourceValue.copy().add(incrementSize);
+				generationState.value = generationState.lastSourceValue.copy();
+				// handle cases where initial-value is less that one (hsqldb for instance).
+				while (generationState.value.lt(1)) {
+					generationState.value.increment();
+				}
+			}
+			if(callback.getTenantIdentifier() != null) {
+				return generationState.value.makeValueThenIncrement();
+			} else {
+				if ( local == null ) {
+					local = new GenerationState();
+					localAssignedIds.set( local );
+				}
+				long toIncrement = THREAD_LOCAL_BLOCK_SIZE;
+				local.value = generationState.value.copy();
+				generationState.value.add(toIncrement);
+				if(!generationState.value.lt(generationState.upperLimitValue)) {
+					//IntegralDataTypeHolder is not great for this, for such a simple math operation there is no easy way to do it
+					long subtract;
+					Number val1 = generationState.value.makeValue();
+					Number val2 = generationState.upperLimitValue.makeValue();
+					if( val1 instanceof BigDecimal ) {
+						BigDecimal b1 = (BigDecimal) val1;
+						BigDecimal b2 = (BigDecimal) val2;
+						subtract = b1.subtract(b2).longValue();
+					} else if( val1 instanceof BigInteger ) {
+						BigInteger b1 = (BigInteger) val1;
+						BigInteger b2 = (BigInteger) val2;
+						subtract = b1.subtract(b2).longValue();
+					} else {
+						subtract = val1.longValue() - val2.longValue();
+					}
+					generationState.value.subtract(subtract);
+				}
+				local.upperLimitValue = generationState.value.copy();
+
+				return local.value.makeValueThenIncrement();
+			}
+		}
 	}
 
 	private GenerationState noTenantState;
 	private Map<String,GenerationState> tenantSpecificState;
+	private ThreadLocal<GenerationState> localAssignedIds = new ThreadLocal<GenerationState>();
 
 	private GenerationState locateGenerationState(String tenantIdentifier) {
 		if ( tenantIdentifier == null ) {
